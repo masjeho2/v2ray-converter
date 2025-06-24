@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V2Ray to Clash YAML Converter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter for clean typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons (e.g., copy icon) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /* Base styles for Inter font and background */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0f2f7; /* Light cyan background */
+            background-image: linear-gradient(135deg, #e0f2f7 0%, #c1e4f4 100%); /* Subtle gradient */
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Center vertically for smaller content, flex-start for longer */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            color: #374151; /* Default text color */
+        }
+
+        /* Main container styling */
+        .container {
+            background-color: #ffffff;
+            border-radius: 20px; /* More rounded corners */
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15); /* Stronger shadow for depth */
+            padding: 40px;
+            width: 100%;
+            max-width: 900px; /* Slightly wider */
+            display: flex;
+            flex-direction: column;
+            gap: 25px; /* Increased spacing between sections */
+            position: relative; /* For background blob */
+            overflow: hidden; /* Hide overflowing blobs */
+        }
+
+        /* Decorative background blob */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            left: -50px;
+            width: 200px;
+            height: 200px;
+            background-color: #6366f1; /* Indigo */
+            border-radius: 50%;
+            opacity: 0.05;
+            filter: blur(80px);
+            z-index: 0;
+        }
+        .container::after {
+            content: '';
+            position: absolute;
+            bottom: -70px;
+            right: -70px;
+            width: 250px;
+            height: 250px;
+            background-color: #10b981; /* Emerald */
+            border-radius: 50%;
+            opacity: 0.07;
+            filter: blur(100px);
+            z-index: 0;
+        }
+
+        /* Textarea styling */
+        textarea {
+            resize: vertical;
+            min-height: 120px; /* Taller textarea */
+            padding: 15px;
+            border-radius: 12px; /* More rounded */
+            border: 1px solid #cbd5e0; /* Lighter border */
+            font-family: monospace;
+            font-size: 0.95rem; /* Slightly larger font */
+            background-color: #f8fafc; /* Very light gray */
+            transition: all 0.3s ease;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Inner shadow */
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo focus border */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); /* Focus ring */
+            background-color: #ffffff;
+        }
+
+        /* Button styling */
+        button {
+            padding: 15px 30px; /* Larger padding */
+            background-color: #6366f1; /* Indigo */
+            color: white;
+            border: none;
+            border-radius: 12px; /* More rounded */
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4); /* Stronger shadow */
+            display: flex; /* For icon alignment */
+            align-items: center;
+            justify-content: center;
+            gap: 10px; /* Space between text and icon */
+        }
+        button:hover {
+            background-color: #4f46e5; /* Darker indigo */
+            transform: translateY(-3px); /* More pronounced lift */
+            box-shadow: 0 12px 25px rgba(99, 102, 241, 0.5);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Preformatted text styling */
+        pre {
+            background-color: #f1f5f9; /* Light slate gray */
+            padding: 20px; /* More padding */
+            border-radius: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-family: 'Fira Code', 'Cascadia Code', monospace; /* More aesthetic monospace font */
+            font-size: 0.9rem;
+            color: #4b5563; /* Darker text for readability */
+            border: 1px solid #e2e8f0;
+            box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Message styling (error/success) */
+        .error-message {
+            color: #ef4444; /* Red */
+            background-color: #fef2f2; /* Light red background */
+            border: 1px solid #fecaca;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        .success-message {
+            color: #22c55e; /* Green */
+            background-color: #f0fdf4; /* Light green background */
+            border: 1px solid #bbf7d0;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        /* Copy button specific styling */
+        .copy-button {
+            background-color: #10b981; /* Emerald green */
+            padding: 10px 20px; /* Smaller padding than main button */
+            font-size: 0.8rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            margin-left: auto; /* Push to right */
+            border-radius: 8px; /* Slightly less rounded */
+            transform: none; /* Override main button hover transform initially */
+        }
+        .copy-button:hover {
+            background-color: #059669; /* Darker emerald */
+            transform: translateY(-2px); /* Slight lift on hover */
+            box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4);
+        }
+        .copy-feedback {
+            font-size: 0.8rem;
+            color: #059669; /* Emerald */
+            margin-left: 10px;
+            display: inline-block;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            align-self: center; /* Align with other items in flex */
+        }
+        .copy-feedback.show {
+            opacity: 1;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+            h1 {
+                font-size: 2rem; /* Smaller heading on mobile */
+            }
+            button {
+                padding: 12px 20px;
+                font-size: 0.95rem;
+            }
+            .copy-button {
+                padding: 8px 15px;
+                font-size: 0.75rem;
+            }
+            .flex-mobile-column {
+                flex-direction: column; /* Stack elements in flex on mobile */
+                align-items: flex-start;
+            }
+            .flex-mobile-column .copy-button {
+                margin-left: 0;
+                margin-top: 10px; /* Space between title and button */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-extrabold text-gray-900 leading-tight">V2Ray Link Converter</h1>
+            <p class="text-lg text-gray-600 mt-2">Konversi link V2Ray ke format Clash YAML dengan mudah.</p>
+        </header>
+
+        <section class="text-center">
+            <p class="text-gray-700 text-md">
+                Tempelkan link V2Ray Anda (VMess, VLESS, atau Trojan) di bawah ini. Alat ini akan mengurai dan mengonversinya ke konfigurasi proxy Clash YAML.
+                Hanya konversi yang relevan berdasarkan tipe link input dan jaringan (WS, gRPC, TCP, dll.) yang akan ditampilkan.
+            </p>
+        </section>
+
+        <div class="mb-4">
+            <label for="v2rayLink" class="block text-gray-700 text-sm font-semibold mb-2">
+                Link V2Ray Anda:
+            </label>
+            <textarea id="v2rayLink" rows="6" class="w-full focus:outline-none focus:ring-2"
+                placeholder="Misal: vmess://eyJhZGRyZXNzIjoiaG9zdC5jb20iLCJwb3J0IjoiNDQzIiwiaWQiOiJ1dWlkIiwiYWlkIjoiMCIsIm5ldCI6IndzIiwidHlwZSI6Im5vbmUiLCJ0bHMiOiJ0bHMiLCJzbmkiOiJob3N0LmNjb20iLCJwcyI6Ik15VmluZyBXUyJ9="></textarea>
+        </div>
+
+        <button id="convertButton" class="w-full">
+            <i class="fas fa-magic"></i> Konversi ke Clash YAML
+        </button>
+
+        <div id="outputArea" class="mt-6 hidden">
+            <div id="statusMessage" class="mb-4 hidden"></div>
+
+            <div id="originalLinkOutput" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 class="text-lg font-semibold text-blue-800 mb-2">Link Asli:</h3>
+                <pre id="originalLinkText" class="text-blue-700"></pre>
+            </div>
+
+            <div id="clashYamlOutput" class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center mb-2 flex-mobile-column">
+                    <h3 class="text-lg font-semibold text-green-800">Konfigurasi Clash YAML:</h3>
+                    <button id="copyButton" class="copy-button">
+                        <i class="fas fa-copy"></i> Salin
+                    </button>
+                    <span id="copyFeedback" class="copy-feedback">Tersalin!</span>
+                </div>
+                <pre id="clashYamlText" class="text-green-700"></pre>
+            </div>
+        </div>
+
+        <footer class="mt-10 text-sm text-gray-500 text-center border-t border-gray-200 pt-6">
+            <h3 class="font-semibold text-gray-700 mb-3 text-base">Contoh Link untuk Dicoba:</h3>
+            <ul class="list-disc list-inside space-y-1 text-left mx-auto max-w-lg">
+                <li><strong class="text-gray-700">VMess WS:</strong> <code>vmess://eyJhZGRyZXNzIjoiaG9zdC5jb20iLCJwb3J0IjoiNDQzIiwiaWQiOiJ1dWlkIiwiYWlkIjoiMCIsIm5ldCI6IndzIiwidHlwZSI6Im5vbmUiLCJ0bHMiOiJ0bHMiLCJzbmkiOiJob3N0LmNjb20iLCJwcyI6Ik15VmluZyBXUyJ9=</code></li>
+                <li><strong class="text-gray-700">VMess gRPC:</strong> <code>vmess://eyJhZGRyZXNzIjoiZ3JwYy5leGFtcGxlLmNvbSIsImlkIjoidXVpZCIsImFpZCI6IjY0IiwibmV0IjoiZ3JwYyIsInR5cGUiOiJub25lIiwidGxzIjoidGxzIiwic25pIjoiZ3JwYy5leGFtcGxlLmNvbSIsInBhdGgiOiJteVNlcnZpY2VOYW1lIiwicHMiOiJNeVZNZXNzR1JQQyJ9</code></li>
+                <li><strong class="text-gray-700">VLESS WS:</strong> <code>vless://uuid@example.com:443?security=tls&type=ws&path=/vless&sni=example.com#MyVlessWS</code></li>
+                <li><strong class="text-gray-700">VLESS gRPC:</strong> <code>vless://uuid@example.com:443?security=tls&type=grpc&serviceName=myGrpcService&sni=example.com#MyVlessGRPC</code></li>
+                <li><strong class="text-gray-700">Trojan WS:</strong> <code>trojan://password@example.com:443?security=tls&type=ws&path=/trojan&sni=example.com#MyTrojanWS</code></li>
+                <li><strong class="text-gray-700">Trojan gRPC:</strong> <code>trojan://password@example.com:443?security=tls&type=grpc&serviceName=myGrpcService&sni=example.com#MyTrojanGRPC</code></li>
+            </ul>
+        </footer>
+    </div>
+
+    <script>
+        /**
+         * V2RayConfig Class: Responsible for parsing various V2Ray link types
+         * (VMess, VLESS, Trojan) and converting them to relevant Clash YAML formats,
+         * including handling network options (WebSocket, gRPC).
+         */
+        class V2RayConfig {
+            /**
+             * Constructor for V2RayConfig.
+             * @param {string} link V2Ray link (VMess, VLESS, or Trojan) to be parsed.
+             */
+            constructor(link) {
+                this.originalLink = link;
+                this.type = null; // Protocol type (vmess, vless, trojan)
+                this.config = {}; // Object to store parsed configuration properties
+
+                this.parse(link);
+            }
+
+            /**
+             * Detects link type and calls the appropriate parser.
+             * @param {string} link V2Ray link.
+             * @throws {Error} If link format is invalid or unsupported.
+             */
+            parse(link) {
+                if (link.startsWith('vmess://')) {
+                    this.type = 'vmess';
+                    this._parseVmess(link);
+                } else if (link.startsWith('vless://')) {
+                    this.type = 'vless';
+                    this._parseVless(link);
+                } else if (link.startsWith('trojan://')) {
+                    this.type = 'trojan';
+                    this._parseTrojan(link);
+                } else {
+                    throw new Error("Unsupported V2Ray link type or invalid format. Only VMess, VLESS, or Trojan.");
+                }
+            }
+
+            /**
+             * Parses a VMess link.
+             * @param {string} link VMess link.
+             * @private
+             */
+            _parseVmess(link) {
+                try {
+                    const base64Part = link.split('vmess://')[1];
+                    // Base64 decode for browser environment
+                    const decoded = this._decodeBase64Url(base64Part);
+                    const jsonConfig = JSON.parse(decoded);
+
+                    this.config = {
+                        address: jsonConfig.add,
+                        port: jsonConfig.port,
+                        id: jsonConfig.id,
+                        alterId: jsonConfig.aid,
+                        network: jsonConfig.net,
+                        type: jsonConfig.type, // "none" or other
+                        tls: jsonConfig.tls === 'tls', // Convert to boolean
+                        sni: jsonConfig.sni || jsonConfig.add,
+                        ps: jsonConfig.ps,
+                        path: jsonConfig.path || '/', // path for ws/grpc
+                        host: jsonConfig.host || '', // host header for ws
+                        serviceName: jsonConfig.path || '', // For gRPC, path is often the serviceName
+                    };
+                } catch (error) {
+                    throw new Error(`Failed to parse VMess link: ${error.message}. Please check the link format.`);
+                }
+            }
+
+            /**
+             * Helper to decode Base64Url string (which can be without padding)
+             * to standard Base64 and then decode.
+             * @param {string} str Base64Url string
+             * @returns {string} Decoded string
+             * @private
+             */
+            _decodeBase64Url(str) {
+                // Replace URL-safe characters with standard Base64 characters
+                str = str.replace(/-/g, '+').replace(/_/g, '/');
+                // Pad with '=' until it's a multiple of 4
+                while (str.length % 4) {
+                    str += '=';
+                }
+                // Use atob for Base64 decoding
+                // decodeURIComponent and escape are used for UTF-8 handling from binary string
+                return decodeURIComponent(escape(atob(str)));
+            }
+
+
+            /**
+             * Parses a VLESS link.
+             * @param {string} link VLESS link.
+             * @private
+             */
+            _parseVless(link) {
+                try {
+                    const [basePart, aliasPart] = link.split('#');
+                    const [protocolAndAuth, paramsPart] = basePart.split('?');
+                    const [id, addressPort] = protocolAndAuth.split('vless://')[1].split('@');
+                    const [address, port] = addressPort.split(':');
+
+                    this.config.id = id;
+                    this.config.address = address;
+                    this.config.port = parseInt(port, 10);
+                    this.config.ps = aliasPart ? decodeURIComponent(aliasPart) : `vless-proxy-${address}`;
+
+                    // Initialize defaults
+                    this.config.tls = false;
+                    this.config.network = 'tcp';
+                    this.config.path = '/';
+                    this.config.host = '';
+                    this.config.sni = address;
+                    this.config.serviceName = ''; // Specific for gRPC
+                    this.config.flow = ''; // For VLESS XTLS reality
+
+                    if (paramsPart) {
+                        paramsPart.split('&').forEach(param => {
+                            let [key, value] = param.split('=');
+                            key = key.toLowerCase();
+                            value = decodeURIComponent(value || '');
+
+                            switch (key) {
+                                case 'security':
+                                    if (value === 'tls' || value === 'xtls') this.config.tls = true; // Handle xtls as tls for Clash config
+                                    break;
+                                case 'type':
+                                    this.config.network = value;
+                                    break;
+                                case 'path':
+                                    this.config.path = value;
+                                    break;
+                                case 'host':
+                                    this.config.host = value;
+                                    break;
+                                case 'sni':
+                                    this.config.sni = value;
+                                    break;
+                                case 'servicename':
+                                    this.config.serviceName = value;
+                                    break;
+                                case 'flow':
+                                    this.config.flow = value;
+                                    break;
+                            }
+                        });
+                    }
+                    if (this.config.network === 'grpc' && !this.config.serviceName) {
+                        this.config.serviceName = this.config.path; // Fallback for gRPC if serviceName is not explicit
+                    }
+                } catch (error) {
+                    throw new Error(`Failed to parse VLESS link: ${error.message}. Please check the link format.`);
+                }
+            }
+
+            /**
+             * Parses a Trojan link.
+             * @param {string} link Trojan link.
+             * @private
+             */
+            _parseTrojan(link) {
+                try {
+                    const [basePart, aliasPart] = link.split('#');
+                    const [protocolAndAuth, paramsPart] = basePart.split('?');
+                    const [password, addressPort] = protocolAndAuth.split('trojan://')[1].split('@');
+                    const [address, port] = addressPort.split(':');
+
+                    this.config.password = password;
+                    this.config.address = address;
+                    this.config.port = parseInt(port, 10);
+                    this.config.ps = aliasPart ? decodeURIComponent(aliasPart) : `trojan-proxy-${address}`;
+
+                    // Initialize defaults
+                    this.config.tls = true; // Trojan links almost always imply TLS
+                    this.config.network = 'tcp';
+                    this.config.path = '/';
+                    this.config.host = '';
+                    this.config.sni = address;
+                    this.config.serviceName = ''; // Specific for gRPC
+
+                    if (paramsPart) {
+                        paramsPart.split('&').forEach(param => {
+                            let [key, value] = param.split('=');
+                            key = key.toLowerCase();
+                            value = decodeURIComponent(value || '');
+
+                            switch (key) {
+                                case 'security':
+                                    // Trojan typically always has TLS. This might specify TLS features.
+                                    // For Clash, we mainly care if TLS is true.
+                                    if (value === 'tls' || value === 'xtls') this.config.tls = true;
+                                    break;
+                                case 'type':
+                                    this.config.network = value;
+                                    break;
+                                case 'path':
+                                    this.config.path = value;
+                                    break;
+                                case 'host':
+                                    this.config.host = value;
+                                    break;
+                                case 'sni':
+                                    this.config.sni = value;
+                                    break;
+                                case 'servicename':
+                                    this.config.serviceName = value;
+                                    break;
+                            }
+                        });
+                    }
+                    if (this.config.network === 'grpc' && !this.config.serviceName) {
+                        this.config.serviceName = this.config.path;
+                    }
+                } catch (error) {
+                    throw new Error(`Failed to parse Trojan link: ${error.message}. Please check the link format.`);
+                }
+            }
+
+            /**
+             * Converts parsed configuration to Clash YAML format (VMess type).
+             * @returns {string} Clash YAML configuration for VMess proxy.
+             */
+            toClashVmessYaml() {
+                // When converting from VLESS/Trojan to VMess, we need UUID and AlterID.
+                // Assumption: use their ID/password as UUID. AlterID defaults to 0.
+                // It's more accurate if the original link was VMess.
+                const uuid = this.config.id || this.config.password || 'auto-generated-uuid';
+                const alterId = this.config.alterId !== undefined ? this.config.alterId : 0; // Default alterId to 0
+
+                const { address, port, network, tls, sni, ps, path, host, serviceName } = this.config;
+                const servername = sni || address;
+                const skipCertVerify = tls ? 'true' : 'false';
+
+                let yaml = `  - name: ${ps || 'vmess-proxy'}
+    server: ${address}
+    type: vmess
+    port: ${port}
+    uuid: ${uuid}
+    alterId: ${alterId}
+    cipher: auto`;
+
+                if (tls) {
+                    yaml += `
+    tls: true
+    skip-cert-verify: ${skipCertVerify}
+    servername: ${servername}`;
+                } else {
+                    yaml += `
+    tls: false`;
+                }
+
+                yaml += `
+    network: ${network}`;
+
+                if (network === 'ws') {
+                    yaml += `
+    ws-opts:
+      path: ${path || '/'}`;
+                    if (host) {
+                        yaml += `
+      headers:
+        Host: ${host}`;
+                    }
+                } else if (network === 'grpc') {
+                    yaml += `
+    grpc-opts:
+      service-name: ${serviceName || ''}`;
+                }
+                yaml += `
+    udp: true`;
+
+                return yaml;
+            }
+
+            /**
+             * Converts parsed configuration to Clash YAML format (VLESS type).
+             * @returns {string} Clash YAML configuration for VLESS proxy.
+             */
+            toClashVlessYaml() {
+                // When converting from VMess/Trojan to VLESS, we need UUID.
+                // Assumption: use their ID/password as VLESS UUID.
+                const uuid = this.config.id || this.config.password || 'auto-generated-uuid';
+
+                const { address, port, network, tls, sni, ps, path, host, serviceName, flow } = this.config;
+                const servername = sni || address;
+                const skipCertVerify = tls ? 'true' : 'false';
+
+                let yaml = `  - name: ${ps || 'vless-proxy'}
+    server: ${address}
+    port: ${port}
+    type: vless
+    uuid: ${uuid}
+    tls: ${tls}`;
+
+                if (tls) {
+                    yaml += `
+    servername: ${servername}
+    skip-cert-verify: ${skipCertVerify}`;
+                }
+
+                yaml += `
+    network: ${network}`;
+
+                if (network === 'ws') {
+                    yaml += `
+    ws-opts:
+      path: ${path || '/'}`;
+                    if (host) {
+                        yaml += `
+      headers:
+        Host: ${host}`;
+                    }
+                } else if (network === 'grpc') {
+                    yaml += `
+    grpc-opts:
+      service-name: ${serviceName || ''}`;
+                }
+                if (flow) {
+                    yaml += `
+    flow: ${flow}`;
+                }
+                yaml += `
+    udp: true`;
+
+                return yaml;
+            }
+
+            /**
+             * Converts parsed configuration to Clash YAML format (Trojan type).
+             * @returns {string} Clash YAML configuration for Trojan proxy.
+             */
+            toClashTrojanYaml() {
+                // When converting from VMess/VLESS to Trojan, we need a password.
+                // Assumption: use their ID/UUID as Trojan password.
+                const password = this.config.password || this.config.id || 'auto-generated-password';
+
+                const { address, port, tls, sni, ps, network, path, host, serviceName } = this.config;
+                const servername = sni || address;
+                const skipCertVerify = tls ? 'true' : 'false';
+
+                let yaml = `  - name: ${ps || 'trojan-proxy'}
+    server: ${address}
+    port: ${port}
+    type: trojan
+    password: ${password}
+    tls: ${tls}`;
+
+                if (tls) {
+                    yaml += `
+    servername: ${servername}
+    skip-cert-verify: ${skipCertVerify}`;
+                }
+
+                yaml += `
+    network: ${network}`;
+
+                if (network === 'ws') {
+                    yaml += `
+    ws-opts:
+      path: ${path || '/'}`;
+                    if (host) {
+                        yaml += `
+      headers:
+        Host: ${host}`;
+                    }
+                } else if (network === 'grpc') {
+                    yaml += `
+    grpc-opts:
+      service-name: ${serviceName || ''}`;
+                }
+                yaml += `
+    udp: true`;
+
+                return yaml;
+            }
+        }
+
+        // --- DOM Elements and Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const v2rayLinkInput = document.getElementById('v2rayLink');
+            const convertButton = document.getElementById('convertButton');
+            const outputArea = document.getElementById('outputArea');
+            const statusMessage = document.getElementById('statusMessage');
+            const originalLinkText = document.getElementById('originalLinkText');
+            const clashYamlText = document.getElementById('clashYamlText');
+            const copyButton = document.getElementById('copyButton');
+            const copyFeedback = document.getElementById('copyFeedback');
+
+            convertButton.addEventListener('click', () => {
+                const link = v2rayLinkInput.value.trim();
+                // Clear previous messages and output
+                statusMessage.classList.add('hidden');
+                statusMessage.classList.remove('error-message', 'success-message');
+                originalLinkText.textContent = '';
+                clashYamlText.textContent = '';
+                outputArea.classList.add('hidden');
+                copyFeedback.classList.remove('show'); // Hide copy feedback
+
+                if (!link) {
+                    statusMessage.textContent = 'Mohon masukkan link V2Ray.';
+                    statusMessage.classList.remove('hidden');
+                    statusMessage.classList.add('error-message');
+                    return;
+                }
+
+                try {
+                    const v2rayConfig = new V2RayConfig(link);
+                    let clashYaml = '';
+
+                    switch (v2rayConfig.type) {
+                        case 'vmess':
+                            clashYaml = v2rayConfig.toClashVmessYaml();
+                            break;
+                        case 'vless':
+                            clashYaml = v2rayConfig.toClashVlessYaml();
+                            break;
+                        case 'trojan':
+                            clashYaml = v2rayConfig.toClashTrojanYaml();
+                            break;
+                        default:
+                            throw new Error('Tipe link tidak dikenali setelah parsing.');
+                    }
+
+                    originalLinkText.textContent = `Link Asli (${v2rayConfig.type.toUpperCase()} - Jaringan: ${v2rayConfig.config.network || 'N/A'}):\n${link}`;
+                    clashYamlText.textContent = clashYaml;
+
+                    outputArea.classList.remove('hidden');
+                    statusMessage.textContent = 'Konversi berhasil!';
+                    statusMessage.classList.remove('hidden');
+                    statusMessage.classList.add('success-message');
+
+                } catch (error) {
+                    console.error('Conversion error:', error);
+                    statusMessage.textContent = `Kesalahan: ${error.message}\nPastikan format link valid.`;
+                    statusMessage.classList.remove('hidden');
+                    statusMessage.classList.add('error-message');
+                    outputArea.classList.add('hidden'); // Hide output if there's an error
+                }
+            });
+
+            // Add event listener for the copy button
+            copyButton.addEventListener('click', () => {
+                const textToCopy = clashYamlText.textContent;
+                if (textToCopy) {
+                    // Create a temporary textarea element
+                    const tempTextArea = document.createElement('textarea');
+                    tempTextArea.value = textToCopy;
+                    document.body.appendChild(tempTextArea);
+                    tempTextArea.select();
+                    try {
+                        document.execCommand('copy');
+                        copyFeedback.classList.add('show'); // Show "Copied!" feedback
+                        setTimeout(() => {
+                            copyFeedback.classList.remove('show'); // Hide feedback after 2 seconds
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Failed to copy text: ', err);
+                        // Fallback: inform user to copy manually
+                        copyFeedback.textContent = 'Gagal menyalin. Silakan salin secara manual.';
+                        copyFeedback.classList.add('show');
+                        copyFeedback.style.color = '#ef4444'; // Red for error
+                        setTimeout(() => {
+                            copyFeedback.classList.remove('show');
+                            copyFeedback.style.color = ''; // Reset color
+                        }, 3000);
+                    }
+                    document.body.removeChild(tempTextArea);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
